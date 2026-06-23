@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FaGithub, FaExternalLinkAlt, FaSearch } from 'react-icons/fa';
 import { FadeIn, StaggerContainer, StaggerItem } from '../common/Animate';
@@ -10,9 +10,15 @@ const Projects = ({ initialProjects = [] }) => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [loading, setLoading] = useState(false);
+  const initialRef = useRef(initialProjects);
 
   useEffect(() => {
-    api.get('/projects/categories').then((res) => setCategories(res.data));
+    initialRef.current = initialProjects;
+    if (initialProjects.length > 0) setProjects(initialProjects);
+  }, [initialProjects]);
+
+  useEffect(() => {
+    api.get('/projects/categories').then((res) => setCategories(res.data)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -25,7 +31,7 @@ const Projects = ({ initialProjects = [] }) => {
         const { data } = await api.get('/projects', { params });
         setProjects(data);
       } catch {
-        setProjects(initialProjects);
+        if (initialRef.current.length > 0) setProjects(initialRef.current);
       } finally {
         setLoading(false);
       }
@@ -33,7 +39,7 @@ const Projects = ({ initialProjects = [] }) => {
 
     const debounce = setTimeout(fetchProjects, 300);
     return () => clearTimeout(debounce);
-  }, [search, category, initialProjects]);
+  }, [search, category]);
 
   return (
     <section id="projects" className="py-20 md:py-28">

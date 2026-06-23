@@ -15,7 +15,10 @@ const Experience = ({ experiences }) => {
         <div className="relative">
           <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary-500 to-purple-500 md:-translate-x-1/2" />
 
-          {experiences.map((exp, idx) => (
+          {experiences.length === 0 ? (
+            <p className="text-center text-dark-500 py-8">No experience entries yet.</p>
+          ) : (
+            experiences.map((exp, idx) => (
             <FadeIn key={exp._id} delay={idx * 0.1}>
               <div className={`relative flex items-start gap-8 mb-12 ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
                 <div className="hidden md:block md:w-1/2" />
@@ -35,7 +38,8 @@ const Experience = ({ experiences }) => {
                 </div>
               </div>
             </FadeIn>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </section>

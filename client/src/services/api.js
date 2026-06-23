@@ -3,14 +3,33 @@ import axios from 'axios';
 const RENDER_API = 'https://myportifolio-1-xdlo.onrender.com/api';
 const RENDER_ORIGIN = 'https://myportifolio-1-xdlo.onrender.com';
 
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : RENDER_API);
+export const getApiBaseUrl = () => {
+  if (import.meta.env.DEV) return '/api';
+
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname.includes('onrender.com')) return '/api';
+    return RENDER_API;
+  }
+
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl?.startsWith('http')) return envUrl;
+  return RENDER_API;
+};
+
+export const getServerOrigin = () => {
+  const base = getApiBaseUrl();
+  if (base.startsWith('http')) return base.replace('/api', '');
+  if (typeof window !== 'undefined') return window.location.origin;
+  return RENDER_ORIGIN;
+};
 
 const api = axios.create({
-  baseURL: API_URL,
+  timeout: 60000,
   headers: { 'Content-Type': 'application/json' },
 });
 
 api.interceptors.request.use((config) => {
+  config.baseURL = getApiBaseUrl();
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -32,14 +51,22 @@ api.interceptors.response.use(
   }
 );
 
+export const fetchWithRetry = async (request, retries = 2, delay = 2000) => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await request();
+    } catch (error) {
+      if (attempt === retries) throw error;
+      await new Promise((resolve) => setTimeout(resolve, delay * (attempt + 1)));
+    }
+  }
+};
+
 export const getImageUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
   if (path.startsWith('/uploads')) {
-    const base =
-      import.meta.env.VITE_API_URL?.replace('/api', '') ||
-      (import.meta.env.DEV ? '' : RENDER_ORIGIN);
-    return `${base}${path}`;
+    return `${getServerOrigin()}${path}`;
   }
   return path;
 };

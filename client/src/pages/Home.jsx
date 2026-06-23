@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../services/api';
+import api, { fetchWithRetry } from '../services/api';
 import MainLayout from '../layouts/MainLayout';
 import LoadingScreen from '../components/common/LoadingScreen';
 import Hero from '../components/sections/Hero';
@@ -13,6 +13,8 @@ import Testimonials from '../components/sections/Testimonials';
 import Contact from '../components/sections/Contact';
 import Stats from '../components/sections/Stats';
 
+const fetchEndpoint = (url) => fetchWithRetry(() => api.get(url));
+
 const Home = () => {
   const [profile, setProfile] = useState(null);
   const [skills, setSkills] = useState([]);
@@ -21,26 +23,37 @@ const Home = () => {
   const [education, setEducation] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
+      setFetchError('');
       try {
-        const [profileRes, skillsRes, projectsRes, expRes, eduRes, testRes] = await Promise.all([
-          api.get('/auth/profile'),
-          api.get('/skills'),
-          api.get('/projects'),
-          api.get('/experiences'),
-          api.get('/education'),
-          api.get('/testimonials'),
+        const results = await Promise.allSettled([
+          fetchEndpoint('/auth/profile'),
+          fetchEndpoint('/skills'),
+          fetchEndpoint('/projects'),
+          fetchEndpoint('/experiences'),
+          fetchEndpoint('/education'),
+          fetchEndpoint('/testimonials'),
         ]);
-        setProfile(profileRes.data);
-        setSkills(skillsRes.data);
-        setProjects(projectsRes.data);
-        setExperiences(expRes.data);
-        setEducation(eduRes.data);
-        setTestimonials(testRes.data);
+
+        const [profileRes, skillsRes, projectsRes, expRes, eduRes, testRes] = results;
+
+        if (profileRes.status === 'fulfilled') setProfile(profileRes.value.data);
+        if (skillsRes.status === 'fulfilled') setSkills(skillsRes.value.data);
+        if (projectsRes.status === 'fulfilled') setProjects(projectsRes.value.data);
+        if (expRes.status === 'fulfilled') setExperiences(expRes.value.data);
+        if (eduRes.status === 'fulfilled') setEducation(eduRes.value.data);
+        if (testRes.status === 'fulfilled') setTestimonials(testRes.value.data);
+
+        const failed = results.filter((r) => r.status === 'rejected').length;
+        if (failed === results.length) {
+          setFetchError('Could not load portfolio data. The server may be waking up — please refresh in a moment.');
+        }
       } catch (err) {
         console.error('Failed to fetch data:', err);
+        setFetchError('Could not load portfolio data. Please refresh the page.');
       } finally {
         setLoading(false);
       }
@@ -52,6 +65,11 @@ const Home = () => {
 
   return (
     <MainLayout profile={profile}>
+      {fetchError && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-700 dark:text-amber-300 text-center text-sm py-3 px-4">
+          {fetchError}
+        </div>
+      )}
       <Hero profile={profile} />
       <Stats />
       <About profile={profile} education={education} />

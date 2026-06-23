@@ -37,7 +37,10 @@ const Skills = ({ skills }) => {
         </FadeIn>
 
         <div className="grid md:grid-cols-2 gap-8">
-          {categories.map((category, idx) => (
+          {categories.length === 0 ? (
+            <p className="text-center text-dark-500 col-span-full py-8">No skills to display yet.</p>
+          ) : (
+            categories.map((category, idx) => (
             <FadeIn key={category} delay={idx * 0.1}>
               <div className="glass-card p-8 h-full">
                 <h3 className="text-lg font-semibold mb-6 gradient-text">{category}</h3>
@@ -52,7 +55,8 @@ const Skills = ({ skills }) => {
                 </StaggerContainer>
               </div>
             </FadeIn>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </section>
