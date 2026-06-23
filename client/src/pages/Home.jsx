@@ -24,7 +24,7 @@ const fetchInBatches = async (endpoints) => {
     const batchResults = await Promise.allSettled(batch.map((url) => fetchEndpoint(url)));
     results.push(...batchResults);
     if (i + batchSize < endpoints.length) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 800));
     }
   }
 
@@ -39,14 +39,20 @@ const Home = () => {
   const [education, setEducation] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('Loading Portfolio...');
   const [fetchError, setFetchError] = useState('');
 
   const loadData = async () => {
     setLoading(true);
     setFetchError('');
+    setLoadingMessage('Waking up server... (free tier can take up to 60s)');
 
     try {
-      await wakeUpServer();
+      await wakeUpServer((attempt, total) => {
+        setLoadingMessage(`Connecting to server... attempt ${attempt}/${total}`);
+      });
+
+      setLoadingMessage('Loading your portfolio data...');
 
       const results = await fetchInBatches([
         '/auth/profile',
@@ -68,13 +74,13 @@ const Home = () => {
 
       const failed = results.filter((r) => r.status === 'rejected').length;
       if (failed === results.length) {
-        setFetchError('Server is waking up. Please wait a moment and click Retry.');
+        setFetchError('Server is still waking up. Wait 30 seconds and click Retry.');
       } else if (failed > 0) {
         setFetchError('Some sections failed to load. Click Retry to refresh.');
       }
     } catch (err) {
       console.error('Failed to fetch data:', err);
-      setFetchError('Could not reach the server. Click Retry in a few seconds.');
+      setFetchError('Could not reach the server. Wait 30 seconds and click Retry.');
     } finally {
       setLoading(false);
     }
@@ -84,12 +90,12 @@ const Home = () => {
     loadData();
   }, []);
 
-  if (loading) return <LoadingScreen />;
+  if (loading) return <LoadingScreen message={loadingMessage} />;
 
   return (
     <MainLayout profile={profile}>
       {fetchError && (
-        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-700 dark:text-amber-300 text-center text-sm py-3 px-4 flex items-center justify-center gap-4">
+        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-700 dark:text-amber-300 text-center text-sm py-3 px-4 flex items-center justify-center gap-4 flex-wrap">
           <span>{fetchError}</span>
           <button
             onClick={loadData}

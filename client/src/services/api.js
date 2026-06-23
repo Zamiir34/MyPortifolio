@@ -7,7 +7,10 @@ export const getApiBaseUrl = () => {
   if (import.meta.env.DEV) return '/api';
 
   if (typeof window !== 'undefined') {
-    if (window.location.hostname.includes('onrender.com')) return '/api';
+    const host = window.location.hostname;
+    if (host.includes('onrender.com') || host.includes('vercel.app')) {
+      return '/api';
+    }
     return RENDER_API;
   }
 
@@ -55,24 +58,25 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let wakeUpPromise = null;
 
-export const wakeUpServer = async () => {
-  if (!wakeUpPromise) {
-    wakeUpPromise = fetchWithRetry(() => api.get('/health'), 4, 4000).finally(() => {
-      wakeUpPromise = null;
-    });
-  }
-  return wakeUpPromise;
-};
-
-export const fetchWithRetry = async (request, retries = 3, delay = 3000) => {
+export const fetchWithRetry = async (request, retries = 3, delay = 3000, onRetry) => {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       return await request();
     } catch (error) {
       if (attempt === retries) throw error;
+      onRetry?.(attempt + 1, retries + 1);
       await sleep(delay * (attempt + 1));
     }
   }
+};
+
+export const wakeUpServer = async (onRetry) => {
+  if (!wakeUpPromise) {
+    wakeUpPromise = fetchWithRetry(() => api.get('/health'), 12, 5000, onRetry).finally(() => {
+      wakeUpPromise = null;
+    });
+  }
+  return wakeUpPromise;
 };
 
 export const getImageUrl = (path) => {
