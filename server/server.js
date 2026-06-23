@@ -58,6 +58,17 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Portfolio API is running' });
 });
 
+if (process.env.NODE_ENV === 'production') {
+  const clientDist = path.join(__dirname, '../client/dist');
+  app.use(express.static(clientDist));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      return next();
+    }
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
