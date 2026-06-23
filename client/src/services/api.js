@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const RENDER_API = 'https://myportifolio-1-xdlo.onrender.com/api';
+const RENDER_ORIGIN = 'https://myportifolio-1-xdlo.onrender.com';
+
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : RENDER_API);
 
 const api = axios.create({
   baseURL: API_URL,
@@ -33,7 +36,9 @@ export const getImageUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
   if (path.startsWith('/uploads')) {
-    const base = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
+    const base =
+      import.meta.env.VITE_API_URL?.replace('/api', '') ||
+      (import.meta.env.DEV ? '' : RENDER_ORIGIN);
     return `${base}${path}`;
   }
   return path;

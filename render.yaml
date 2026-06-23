@@ -13,4 +13,4 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: CLIENT_URL
-        value: https://myportifolio-1-xdlo.onrender.com,http://localhost:5173
+        value: https://myportifolio-1-xdlo.onrender.com,https://my-portifolio-dnzecgwui-mohameds-projects-f8a525fa.vercel.app,http://localhost:5173
