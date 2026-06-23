@@ -24,24 +24,7 @@ connectDB();
 
 const app = express();
 
-const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      const isVercel = origin?.endsWith('.vercel.app');
-      if (!origin || allowedOrigins.includes(origin) || isVercel) {
-        callback(null, true);
-      } else {
-        callback(null, false);
-      }
-    },
-    credentials: true,
-  })
-);
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

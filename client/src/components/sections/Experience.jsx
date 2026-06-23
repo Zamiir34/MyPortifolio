@@ -1,7 +1,23 @@
+import { useState, useEffect } from 'react';
 import { FadeIn } from '../common/Animate';
 import { FaBriefcase } from 'react-icons/fa';
+import api, { fetchWithRetry } from '../../services/api';
 
-const Experience = ({ experiences }) => {
+const Experience = ({ experiences: initialExperiences = [] }) => {
+  const [experiences, setExperiences] = useState(initialExperiences);
+
+  useEffect(() => {
+    setExperiences(initialExperiences);
+  }, [initialExperiences]);
+
+  useEffect(() => {
+    fetchWithRetry(() => api.get('/experiences'))
+      .then((res) => {
+        if (res.data?.length) setExperiences(res.data);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <section id="experience" className="py-20 md:py-28 bg-dark-100/50 dark:bg-dark-900/50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,25 +35,25 @@ const Experience = ({ experiences }) => {
             <p className="text-center text-dark-500 py-8">No experience entries yet.</p>
           ) : (
             experiences.map((exp, idx) => (
-            <FadeIn key={exp._id} delay={idx * 0.1}>
-              <div className={`relative flex items-start gap-8 mb-12 ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
-                <div className="hidden md:block md:w-1/2" />
-                <div className="absolute left-4 md:left-1/2 w-4 h-4 bg-primary-500 rounded-full border-4 border-white dark:border-dark-900 md:-translate-x-1/2 z-10 mt-2" />
-                <div className={`ml-12 md:ml-0 md:w-1/2 ${idx % 2 === 0 ? 'md:pr-12' : 'md:pl-12'}`}>
-                  <div className="glass-card p-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FaBriefcase className="w-4 h-4 text-primary-500" />
-                      <span className="text-sm text-primary-500 font-medium">
-                        {exp.startDate} — {exp.endDate}
-                      </span>
+              <FadeIn key={exp._id} delay={idx * 0.1}>
+                <div className={`relative flex items-start gap-8 mb-12 ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
+                  <div className="hidden md:block md:w-1/2" />
+                  <div className="absolute left-4 md:left-1/2 w-4 h-4 bg-primary-500 rounded-full border-4 border-white dark:border-dark-900 md:-translate-x-1/2 z-10 mt-2" />
+                  <div className={`ml-12 md:ml-0 md:w-1/2 ${idx % 2 === 0 ? 'md:pr-12' : 'md:pl-12'}`}>
+                    <div className="glass-card p-6">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FaBriefcase className="w-4 h-4 text-primary-500" />
+                        <span className="text-sm text-primary-500 font-medium">
+                          {exp.startDate} — {exp.endDate}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-semibold">{exp.position}</h3>
+                      <p className="text-primary-600 dark:text-primary-400 font-medium mb-3">{exp.company}</p>
+                      <p className="text-sm text-dark-600 dark:text-dark-400 leading-relaxed">{exp.description}</p>
                     </div>
-                    <h3 className="text-lg font-semibold">{exp.position}</h3>
-                    <p className="text-primary-600 dark:text-primary-400 font-medium mb-3">{exp.company}</p>
-                    <p className="text-sm text-dark-600 dark:text-dark-400 leading-relaxed">{exp.description}</p>
                   </div>
                 </div>
-              </div>
-            </FadeIn>
+              </FadeIn>
             ))
           )}
         </div>

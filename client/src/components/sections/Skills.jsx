@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FadeIn, StaggerContainer, StaggerItem } from '../common/Animate';
 import { useInView } from '../../hooks/useInView';
+import api, { fetchWithRetry } from '../../services/api';
 
 const SkillBar = ({ skill }) => {
   const [ref, isInView] = useInView({ threshold: 0.5 });
@@ -23,7 +25,21 @@ const SkillBar = ({ skill }) => {
   );
 };
 
-const Skills = ({ skills }) => {
+const Skills = ({ skills: initialSkills = [] }) => {
+  const [skills, setSkills] = useState(initialSkills);
+
+  useEffect(() => {
+    setSkills(initialSkills);
+  }, [initialSkills]);
+
+  useEffect(() => {
+    fetchWithRetry(() => api.get('/skills'))
+      .then((res) => {
+        if (res.data?.length) setSkills(res.data);
+      })
+      .catch(() => {});
+  }, []);
+
   const categories = [...new Set(skills.map((s) => s.category))];
 
   return (
@@ -41,20 +57,20 @@ const Skills = ({ skills }) => {
             <p className="text-center text-dark-500 col-span-full py-8">No skills to display yet.</p>
           ) : (
             categories.map((category, idx) => (
-            <FadeIn key={category} delay={idx * 0.1}>
-              <div className="glass-card p-8 h-full">
-                <h3 className="text-lg font-semibold mb-6 gradient-text">{category}</h3>
-                <StaggerContainer>
-                  {skills
-                    .filter((s) => s.category === category)
-                    .map((skill) => (
-                      <StaggerItem key={skill._id}>
-                        <SkillBar skill={skill} />
-                      </StaggerItem>
-                    ))}
-                </StaggerContainer>
-              </div>
-            </FadeIn>
+              <FadeIn key={category} delay={idx * 0.1}>
+                <div className="glass-card p-8 h-full">
+                  <h3 className="text-lg font-semibold mb-6 gradient-text">{category}</h3>
+                  <StaggerContainer>
+                    {skills
+                      .filter((s) => s.category === category)
+                      .map((skill) => (
+                        <StaggerItem key={skill._id}>
+                          <SkillBar skill={skill} />
+                        </StaggerItem>
+                      ))}
+                  </StaggerContainer>
+                </div>
+              </FadeIn>
             ))
           )}
         </div>

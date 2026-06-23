@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaGithub, FaExternalLinkAlt, FaSearch } from 'react-icons/fa';
 import { FadeIn, StaggerContainer, StaggerItem } from '../common/Animate';
-import api, { getImageUrl } from '../../services/api';
+import api, { fetchWithRetry, getImageUrl } from '../../services/api';
 
 const Projects = ({ initialProjects = [] }) => {
   const [projects, setProjects] = useState(initialProjects);
@@ -10,18 +10,26 @@ const Projects = ({ initialProjects = [] }) => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [loading, setLoading] = useState(false);
-  const initialRef = useRef(initialProjects);
 
   useEffect(() => {
-    initialRef.current = initialProjects;
-    if (initialProjects.length > 0) setProjects(initialProjects);
+    setProjects(initialProjects);
   }, [initialProjects]);
 
   useEffect(() => {
-    api.get('/projects/categories').then((res) => setCategories(res.data)).catch(() => {});
+    fetchWithRetry(() => api.get('/projects'))
+      .then((res) => {
+        if (res.data?.length) setProjects(res.data);
+      })
+      .catch(() => {});
+
+    api.get('/projects/categories')
+      .then((res) => setCategories(res.data))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
+    if (!search && category === 'All') return;
+
     const fetchProjects = async () => {
       setLoading(true);
       try {
@@ -31,7 +39,7 @@ const Projects = ({ initialProjects = [] }) => {
         const { data } = await api.get('/projects', { params });
         setProjects(data);
       } catch {
-        if (initialRef.current.length > 0) setProjects(initialRef.current);
+        /* keep current list */
       } finally {
         setLoading(false);
       }
