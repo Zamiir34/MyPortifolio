@@ -1,23 +1,7 @@
-import { useState, useEffect } from 'react';
 import { FadeIn } from '../common/Animate';
 import { FaBriefcase } from 'react-icons/fa';
-import api, { fetchWithRetry } from '../../services/api';
 
-const Experience = ({ experiences: initialExperiences = [] }) => {
-  const [experiences, setExperiences] = useState(initialExperiences);
-
-  useEffect(() => {
-    setExperiences(initialExperiences);
-  }, [initialExperiences]);
-
-  useEffect(() => {
-    fetchWithRetry(() => api.get('/experiences'))
-      .then((res) => {
-        if (res.data?.length) setExperiences(res.data);
-      })
-      .catch(() => {});
-  }, []);
-
+const Experience = ({ experiences = [] }) => {
   return (
     <section id="experience" className="py-20 md:py-28 bg-dark-100/50 dark:bg-dark-900/50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

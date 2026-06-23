@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaGithub, FaExternalLinkAlt, FaSearch } from 'react-icons/fa';
 import { FadeIn, StaggerContainer, StaggerItem } from '../common/Animate';
-import api, { fetchWithRetry, getImageUrl } from '../../services/api';
+import api, { getImageUrl } from '../../services/api';
 
-const Projects = ({ initialProjects = [] }) => {
+const Projects = ({ projects: initialProjects = [] }) => {
   const [projects, setProjects] = useState(initialProjects);
   const [categories, setCategories] = useState(['All']);
   const [search, setSearch] = useState('');
@@ -16,16 +16,11 @@ const Projects = ({ initialProjects = [] }) => {
   }, [initialProjects]);
 
   useEffect(() => {
-    fetchWithRetry(() => api.get('/projects'))
-      .then((res) => {
-        if (res.data?.length) setProjects(res.data);
-      })
-      .catch(() => {});
-
-    api.get('/projects/categories')
-      .then((res) => setCategories(res.data))
-      .catch(() => {});
-  }, []);
+    if (initialProjects.length > 0) {
+      const cats = ['All', ...new Set(initialProjects.map((p) => p.category))];
+      setCategories(cats);
+    }
+  }, [initialProjects]);
 
   useEffect(() => {
     if (!search && category === 'All') return;
@@ -45,7 +40,7 @@ const Projects = ({ initialProjects = [] }) => {
       }
     };
 
-    const debounce = setTimeout(fetchProjects, 300);
+    const debounce = setTimeout(fetchProjects, 400);
     return () => clearTimeout(debounce);
   }, [search, category]);
 

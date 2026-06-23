@@ -24,7 +24,7 @@ export const getServerOrigin = () => {
 };
 
 const api = axios.create({
-  timeout: 60000,
+  timeout: 90000,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -51,13 +51,26 @@ api.interceptors.response.use(
   }
 );
 
-export const fetchWithRetry = async (request, retries = 2, delay = 2000) => {
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+let wakeUpPromise = null;
+
+export const wakeUpServer = async () => {
+  if (!wakeUpPromise) {
+    wakeUpPromise = fetchWithRetry(() => api.get('/health'), 4, 4000).finally(() => {
+      wakeUpPromise = null;
+    });
+  }
+  return wakeUpPromise;
+};
+
+export const fetchWithRetry = async (request, retries = 3, delay = 3000) => {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       return await request();
     } catch (error) {
       if (attempt === retries) throw error;
-      await new Promise((resolve) => setTimeout(resolve, delay * (attempt + 1)));
+      await sleep(delay * (attempt + 1));
     }
   }
 };

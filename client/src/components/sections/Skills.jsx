@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FadeIn, StaggerContainer, StaggerItem } from '../common/Animate';
 import { useInView } from '../../hooks/useInView';
-import api, { fetchWithRetry } from '../../services/api';
 
 const SkillBar = ({ skill }) => {
   const [ref, isInView] = useInView({ threshold: 0.5 });
@@ -25,21 +23,7 @@ const SkillBar = ({ skill }) => {
   );
 };
 
-const Skills = ({ skills: initialSkills = [] }) => {
-  const [skills, setSkills] = useState(initialSkills);
-
-  useEffect(() => {
-    setSkills(initialSkills);
-  }, [initialSkills]);
-
-  useEffect(() => {
-    fetchWithRetry(() => api.get('/skills'))
-      .then((res) => {
-        if (res.data?.length) setSkills(res.data);
-      })
-      .catch(() => {});
-  }, []);
-
+const Skills = ({ skills = [] }) => {
   const categories = [...new Set(skills.map((s) => s.category))];
 
   return (
