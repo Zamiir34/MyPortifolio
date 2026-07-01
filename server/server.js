@@ -3,7 +3,8 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import connectDB from './config/db.js';
+import connectDB, { isDbConnected } from './config/db.js';
+import { requireDB } from './middleware/dbCheck.js';
 import { errorHandler } from './middleware/auth.js';
 
 import authRoutes from './routes/authRoutes.js';
@@ -17,6 +18,14 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 
 dotenv.config();
 
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection:', err?.message || err);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err?.message || err);
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -24,7 +33,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Portfolio API is running' });
+  res.json({
+    status: 'ok',
+    message: 'Portfolio API is running',
+    db: isDbConnected() ? 'connected' : 'disconnected',
+  });
 });
 
 app.use(cors({ origin: true, credentials: true }));
@@ -32,14 +45,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/projects', projectRoutes);
-app.use('/api/skills', skillRoutes);
-app.use('/api/experiences', experienceRoutes);
-app.use('/api/education', educationRoutes);
-app.use('/api/testimonials', testimonialRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/auth', requireDB, authRoutes);
+app.use('/api/projects', requireDB, projectRoutes);
+app.use('/api/skills', requireDB, skillRoutes);
+app.use('/api/experiences', requireDB, experienceRoutes);
+app.use('/api/education', requireDB, educationRoutes);
+app.use('/api/testimonials', requireDB, testimonialRoutes);
+app.use('/api/messages', requireDB, messageRoutes);
+app.use('/api/dashboard', requireDB, dashboardRoutes);
 
 if (process.env.NODE_ENV === 'production') {
   const clientDist = path.join(__dirname, '../client/dist');
